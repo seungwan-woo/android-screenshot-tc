@@ -52,4 +52,4 @@ python3 ci/android/compare.py screenshots/reference.png artifacts/app.png \
   --artifacts artifacts/comparison
 ```
 
-`--no-launch`는 현재 화면을 그대로 캡처합니다. 실제 앱에서는 Espresso/UI Automator 등으로 테스트 상태까지 이동하고 데이터·시간·네트워크 응답을 고정한 뒤 캡처하세요. APK 빌드 출력·debug keystore·SDK·에뮬레이터 데이터는 Git에 넣지 않습니다.
+`--no-launch`는 화면 설정·상태 표시줄·앱을 변경하지 않고 현재 화면을 캡처합니다. 첫 캡처에서 환경을 준비한 뒤 화면 조작과 후속 캡처에 사용하세요. 실제 앱에서는 Espresso/UI Automator 등으로 테스트 상태까지 이동하고 데이터·시간·네트워크 응답을 고정한 뒤 캡처하세요. APK 빌드 출력·debug keystore·SDK·에뮬레이터 데이터는 Git에 넣지 않습니다.
