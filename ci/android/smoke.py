@@ -18,7 +18,12 @@ COMPONENT = 'com.example.screenshotci/.MainActivity'
 SERIAL = os.environ.get('ANDROID_SERIAL', 'emulator-5554')
 
 def run(*command):
-    return subprocess.run(command, check=True, text=True, capture_output=True, timeout=300)
+    result = subprocess.run(command, text=True, capture_output=True, timeout=300)
+    if result.returncode:
+        print(result.stdout, file=sys.stderr, flush=True)
+        print(result.stderr, file=sys.stderr, flush=True)
+        result.check_returncode()
+    return result
 
 def adb(*command):
     return run('adb', '-s', SERIAL, *command).stdout
