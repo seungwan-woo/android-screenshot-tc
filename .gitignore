@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.venv/
+artifacts/
+ci/android/sample/build/
+ci/android/artifacts/
+.superpowers/
