@@ -54,10 +54,10 @@ jobs:
           emulator-build: '16740729'
           ram-size: 3072M
           heap-size: 256M
-          cores: 4
+          cores: 2
           disable-animations: true
           pre-emulator-launch-script: python3 ci/android/check-system-image.py
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -memory 3072 -cores 4 -camera-back none -camera-front none -feature -Vulkan
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -memory 3072 -cores 2 -camera-back none -camera-front none -feature -Vulkan
           script: |
             bash ci/android/ci-check.sh
             python3 ci/android/smoke.py
