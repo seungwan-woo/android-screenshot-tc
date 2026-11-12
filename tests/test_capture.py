@@ -26,14 +26,19 @@ if args[-2:]==['getprop','sys.boot_completed']:
     print(os.environ.get('FAKE_BOOT','1'))
 elif args[-3:]==['exec-out','screencap','-p']:
     sys.stdout.buffer.write(pathlib.Path(os.environ['FAKE_PNG']).read_bytes())
+elif args[-3:]==['shell','wm','size']:
+    print('Physical size: '+os.environ.get('FAKE_SIZE','1080x1920'))
+elif args[-3:]==['shell','wm','density']:
+    print('Physical density: '+os.environ.get('FAKE_DENSITY','420'))
 ''')
         adb.chmod(0o755)
         self.env = {**os.environ, 'PATH': str(self.root) + os.pathsep + os.environ['PATH'],
                     'FAKE_ADB_LOG': str(self.log), 'FAKE_PNG': str(self.png)}
 
-    def capture(self, *options):
+    def capture(self, *options, no_launch=True):
+        mode = ['--no-launch'] if no_launch else []
         return subprocess.run([sys.executable, str(SCRIPT), '--serial', 'test-device',
-                              '--no-launch', '--settle-seconds', '0', '--output', str(self.root / 'captured.png'), *options],
+                              *mode, '--settle-seconds', '0', '--output', str(self.root / 'captured.png'), *options],
                               env=self.env, text=True, capture_output=True, timeout=20)
 
     def commands(self):
@@ -61,6 +66,19 @@ elif args[-3:]==['exec-out','screencap','-p']:
         p = self.capture('--apk', str(apk), '--component', 'example/.Main')
         self.assertEqual(p.returncode, 2, p.stderr)
         self.assertEqual(self.commands(), [])
+
+    def test_launch_preserves_already_correct_display_geometry(self):
+        p = self.capture('--component', 'example/.Main', no_launch=False)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertNotIn(['-s', 'test-device', 'shell', 'wm', 'size', '1080x1920'], self.commands())
+        self.assertNotIn(['-s', 'test-device', 'shell', 'wm', 'density', '420'], self.commands())
+
+    def test_launch_corrects_mismatched_display_geometry(self):
+        self.env.update(FAKE_SIZE='720x1280', FAKE_DENSITY='320')
+        p = self.capture('--component', 'example/.Main', no_launch=False)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn(['-s', 'test-device', 'shell', 'wm', 'size', '1080x1920'], self.commands())
+        self.assertIn(['-s', 'test-device', 'shell', 'wm', 'density', '420'], self.commands())
 
 if __name__ == '__main__':
     unittest.main()

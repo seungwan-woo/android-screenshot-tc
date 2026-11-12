@@ -2,6 +2,7 @@
 """Capture a stable full emulator display, optionally installing and launching an APK."""
 import argparse
 import os
+import re
 from pathlib import Path
 import subprocess
 import time
@@ -28,8 +29,14 @@ def adb(*command):
 if adb('shell', 'getprop', 'sys.boot_completed').strip() != b'1':
     raise RuntimeError('Android is not booted')
 if not args.no_launch:
-    adb('shell', 'wm', 'size', '1080x1920')
-    adb('shell', 'wm', 'density', '420')
+    sizes = re.findall(r'(?:Physical|Override) size:\s*(\d+x\d+)', adb('shell', 'wm', 'size').decode())
+    densities = re.findall(r'(?:Physical|Override) density:\s*(\d+)', adb('shell', 'wm', 'density').decode())
+    if not sizes or not densities:
+        raise RuntimeError('Could not read the current Android display geometry')
+    if sizes[-1] != '1080x1920':
+        adb('shell', 'wm', 'size', '1080x1920')
+    if densities[-1] != '420':
+        adb('shell', 'wm', 'density', '420')
     for name in ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']:
         adb('shell', 'settings', 'put', 'global', name, '0')
     adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
