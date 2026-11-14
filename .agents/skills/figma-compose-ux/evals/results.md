@@ -30,6 +30,12 @@ python3 .agents/skills/figma-compose-ux/scripts/ux.py demo --output-dir /tmp/ux-
 python3 -m unittest discover -s tests -v
 ```
 
-Tests cover design/schema validation, source mapping containment, XML and WMS parsing, geometry/insets normalization, mocked bounded adb/APK binding, safe patch sessions and conflicts, image comparison/provenance, requirement checks, CLI exit codes, evidence preservation and execution after copying scripts outside the repository. CI runs the module suite and a separate synthetic pipeline. No live Figma call, actual Compose compilation/probe, or new emulator UX run was performed for this skill package.
+Tests cover design/schema validation, source mapping containment, XML and WMS parsing, geometry/insets normalization, mocked bounded adb/APK binding, safe patch sessions and conflicts, image comparison/provenance, requirement checks, CLI exit codes, evidence preservation and execution after copying scripts outside the repository. CI runs the module suite and a separate synthetic pipeline. No authenticated Figma tool call, actual Compose compilation/probe, or new Compose emulator UX run succeeded for this skill package.
+
+## Client documentation and deferred Figma validation
+
+Gemini CLI and Claude Code skill discovery paths were checked against their official documentation. The package now documents each client's installation/invocation and the separate MCP authentication requirement. Neither client was used to execute this package's full pipeline.
+
+A later Cloud connection attempt ran `codex mcp add figma --url https://mcp.figma.com/mcp`, which failed because the Codex configuration directory was read-only. A command-scoped server override allowed a separate `codex mcp login figma --no-browser` attempt without changing that configuration, but OAuth metadata discovery failed. An independent HTTPS check received `CONNECT tunnel failed, response 403` from the proxy. No OAuth login completed and no authenticated Figma design or Code Connect mapping was read/published. Live Figma/Code Connect validation is deferred for the user to run in an environment with the required access.
 
 Final local verification: **131 skill tests and 17 existing repository tests passed**. The distributable ZIP was extracted into a fresh temporary directory; all 131 tests and the synthetic demo ran there successfully. No repository checkout was needed for that package run.

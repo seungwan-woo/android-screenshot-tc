@@ -6,11 +6,21 @@ Discover tools from the current MCP tool registry; server prefixes and schemas v
 
 If revision is not provided, record an explicit export snapshot identifier and receipts; do not fabricate a Figma revision. A connector failure can leave independent local work runnable. Report that live extraction is blocked. Publishing Code Connect mappings or writing Figma files is a separate external mutation; this workflow reads existing design information.
 
+## Client connection prerequisites
+
+Skill discovery and MCP authentication are separate. Install the same skill folder in the client's supported path (see [installation](../README.md)), connect the official remote MCP endpoint `https://mcp.figma.com/mcp`, complete the client's Figma OAuth flow, then verify the current session exposes its tools. A local client registration does not automatically configure a separate hosted chat. Client skill-format support alone does not establish successful execution of this workflow.
+
+For a local Codex CLI, register with `codex mcp add figma --url https://mcp.figma.com/mcp` and authenticate with `codex mcp login figma`. Follow the current Figma/client documentation for Gemini CLI or Claude Code. Preserve inherited network/proxy settings. If configuration is read-only, use a client with a writable configuration; if the proxy rejects the destination, report the network block and use an environment with authorized Figma access. Do not label an unsuccessful OAuth discovery request as a connected MCP server.
+
+Before live validation, obtain the selected file/component URL and verify design access plus the project's actual Compose mapping. Creating or publishing a new Code Connect mapping is an explicit task using the appropriate Code Connect integration and its credentials/permissions. Reading existing mappings via MCP and publishing mappings are distinct operations. Credentials belong in the client's OAuth/secret storage, outside source control and review artifacts.
+
 Official references, consulted 2026-11-14:
 
 - [Figma MCP server guide](https://github.com/figma/mcp-server-guide)
 - [Code Connect integrations, including Jetpack Compose](https://github.com/figma/code-connect)
 - [Code Connect Compose documentation](https://www.figma.com/code-connect-docs/compose)
+- [Gemini CLI Agent Skills](https://geminicli.com/docs/cli/skills/)
+- [Claude Code skills](https://code.claude.com/docs/en/skills)
 - [Android screenshot testing](https://developer.android.com/training/testing/ui-tests/screenshot)
 - [Compose interoperability with UI Automator](https://developer.android.com/develop/ui/compose/testing/interoperability#uiautomator)
 - [Compose Semantics](https://developer.android.com/develop/ui/compose/accessibility/semantics)

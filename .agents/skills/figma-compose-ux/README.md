@@ -4,6 +4,44 @@ Figma·Code Connect → Compose 구현 → 임시 계측 → 런타임 증거 �
 
 이 폴더 전체를 다른 저장소의 `.agents/skills/figma-compose-ux/`에 복사할 수 있습니다. 해당 호스트가 지원하면 사용자 스킬 디렉터리에도 설치할 수 있습니다. Python 3.12+, Pillow가 필요하며 adb 수집 시에는 Android SDK platform-tools와 실행 중인 기기가 필요합니다. Figma MCP와 Compose 프로젝트는 실제 작업 시 연결/제공되어야 합니다.
 
+## Codex·Gemini CLI·Claude Code에서 사용
+
+Agent Skills 형식의 `SKILL.md`와 같은 Python 스크립트를 사용합니다. 실제 앱 프로젝트에서 사용할 때는 폴더 전체를 해당 프로젝트의 아래 경로에 배치하세요. PR이 머지되기 전에는 `feat/figma-compose-ux-skill` 브랜치를 사용합니다.
+
+| 클라이언트 | 프로젝트 내 설치 경로 | 호출·확인 방법 |
+|---|---|---|
+| Codex | `.agents/skills/figma-compose-ux/` | `$figma-compose-ux`를 지정해 요청 |
+| [Gemini CLI](https://geminicli.com/docs/cli/skills/) | `.agents/skills/figma-compose-ux/` 또는 `.gemini/skills/figma-compose-ux/` | `/skills list`로 확인하고 스킬 이름을 언급해 요청 |
+| [Claude Code](https://code.claude.com/docs/en/skills) | `.claude/skills/figma-compose-ux/` | `/figma-compose-ux`로 호출 |
+
+Gemini CLI는 현재 `.agents/skills/` 경로도 지원합니다. Claude Code에서 같은 저장소를 사용할 때의 최초 설치 예시:
+
+```bash
+mkdir -p .claude/skills
+cp -R .agents/skills/figma-compose-ux .claude/skills/
+```
+
+다음처럼 요청할 수 있습니다.
+
+> figma-compose-ux 스킬로 이 Figma URL의 화면을 Compose로 구현하고, 스크린샷과 런타임 증거로 요구사항을 검증해줘. 검증 후 임시 계측 코드는 복원해줘.
+
+클라이언트는 프로젝트 파일·명령 실행과 MCP 도구를 사용할 수 있어야 합니다. Gemini CLI·Claude Code는 공식 문서에서 스킬 형식과 설치 경로를 확인했으며, 해당 클라이언트에서 전체 파이프라인을 실행한 검증은 아직 없습니다.
+
+## Figma MCP 연결
+
+스킬 설치와 MCP 인증은 각 클라이언트에서 별도로 진행합니다. 공식 원격 서버는 `https://mcp.figma.com/mcp`입니다. 로컬 Codex CLI의 등록·로그인 절차:
+
+```bash
+codex mcp add figma --url https://mcp.figma.com/mcp
+codex mcp login figma
+```
+
+다른 클라이언트는 [Figma MCP 공식 가이드](https://github.com/figma/mcp-server-guide)에 따라 연결하고, 실제 세션에 Figma 도구가 표시되는지 확인하세요. 로컬 CLI에 저장한 연결은 별도 클라우드 채팅에 자동으로 전달되지 않습니다.
+
+실제 검증에는 접근 가능한 Figma 파일·컴포넌트 URL, 디자인 조회 권한, Compose 프로젝트와 매핑 정보가 필요합니다. Code Connect 매핑 생성·게시는 별도 작업이며 MCP 연결만으로 게시가 완료되지는 않습니다. 설정 디렉터리가 읽기 전용이거나 프록시에서 Figma 도메인을 차단하면 쓰기와 네트워크 접근이 가능한 실행 환경에서 연결해야 합니다. 자세한 증거·인증 구분은 [워크플로](references/workflow.md)를 참고하세요.
+
+## 실행과 검증 범위
+
 ```bash
 python3 -m pip install -r .agents/skills/figma-compose-ux/requirements.txt
 python3 .agents/skills/figma-compose-ux/scripts/ux.py --help
