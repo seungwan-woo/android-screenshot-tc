@@ -53,3 +53,14 @@ python3 ci/android/compare.py screenshots/reference.png artifacts/app.png \
 ```
 
 `--no-launch`는 화면 설정·상태 표시줄·앱을 변경하지 않고 현재 화면을 캡처합니다. 첫 캡처에서 환경을 준비한 뒤 화면 조작과 후속 캡처에 사용하세요. 실제 앱에서는 Espresso/UI Automator 등으로 테스트 상태까지 이동하고 데이터·시간·네트워크 응답을 고정한 뒤 캡처하세요. APK 빌드 출력·debug keystore·SDK·에뮬레이터 데이터는 Git에 넣지 않습니다.
+
+## Figma·Compose UX 의도 검증 스킬
+
+[figma-compose-ux](.agents/skills/figma-compose-ux/README.md)는 Figma MCP·Code Connect 정보를 바탕으로 Compose를 구현하고, 임시 testTag/insets 계측과 스크린샷·UI Automator·Semantics 증거를 연결하는 재사용 스킬입니다. 기능별 CLI와 공통 JSON 계약, 안전한 임시 코드 복원, 요구사항별 판정 및 리포트를 제공합니다.
+
+```bash
+python3 .agents/skills/figma-compose-ux/scripts/ux.py demo --output-dir /tmp/compose-ux-demo
+python3 -m unittest discover -s .agents/skills/figma-compose-ux/tests -v
+```
+
+이 데모와 별도 `Compose UX skill` CI는 합성 데이터로 도구 동작을 검증합니다. 기존 실제 에뮬레이터 screenshot CI와 구분됩니다. 실제 Figma·Compose 프로젝트에 적용할 때는 해당 MCP 연결, 앱 빌드 및 상태별 런타임 관측이 필요합니다.

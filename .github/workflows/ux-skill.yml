@@ -1,0 +1,30 @@
+name: Compose UX skill
+on:
+  push:
+    paths: ['.agents/skills/figma-compose-ux/**', '.github/workflows/ux-skill.yml']
+  pull_request:
+    paths: ['.agents/skills/figma-compose-ux/**', '.github/workflows/ux-skill.yml']
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install skill dependencies
+        run: python3 -m pip install -r .agents/skills/figma-compose-ux/requirements.txt
+      - name: Test modules and portability
+        run: python3 -m unittest discover -s .agents/skills/figma-compose-ux/tests -v
+      - name: Run synthetic pipeline (no live UX approval)
+        run: python3 .agents/skills/figma-compose-ux/scripts/ux.py demo --output-dir "$RUNNER_TEMP/ux-skill-demo"
+      - name: Upload synthetic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-compose-ux-${{ github.run_id }}
+          path: ${{ runner.temp }}/ux-skill-demo/
+          if-no-files-found: warn
