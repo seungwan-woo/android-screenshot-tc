@@ -2,7 +2,7 @@
 
 실제 에뮬레이터 화면을 캡처해 PNG 기준 이미지와 비교하는 최소 샘플입니다. [Android 공식 screenshot testing 문서](https://developer.android.com/training/testing/ui-tests/screenshot)의 기준 이미지 비교 방식을 사용합니다. Compose Preview나 호스트 렌더링이 아니라 `adb exec-out screencap -p`로 전체 디스플레이를 캡처합니다.
 
-샘플 앱은 Jetpack Compose와 Material 3로 구현한 Screenshot Lab입니다. `Update state`를 누르면 `State: READY`와 `State: UPDATED`를 전환합니다. 시스템 라이트·다크 설정에 따라 색상과 시스템 바 아이콘이 바뀝니다. 화면 배경은 시스템 바까지 확장하고 콘텐츠에는 `WindowInsets.safeDrawing`을 적용합니다.
+샘플 앱은 Jetpack Compose와 Material 3로 구현한 Screenshot Lab입니다. `Update state`를 누르면 `State: READY`가 `State: UPDATED`로 바뀝니다. 시스템 라이트·다크 설정에 따라 색상과 시스템 바 아이콘이 바뀝니다. 화면 배경은 시스템 바까지 확장하고 콘텐츠에는 `WindowInsets.safeDrawing`을 적용합니다.
 
 빌드는 JDK 21, Android SDK Platform 37.1 (`platforms;android-37.1`), Build Tools 37.0.0을 사용합니다. 샘플에 포함된 Gradle 9.9.2 Wrapper에서 AGP 9.5.2, Kotlin 2.4.21, Compose BOM 2026.11.01(Compose UI 1.13.0, Material 3 1.5.0)을 사용합니다. 실행 검증은 API 35 에뮬레이터에서 합니다.
 
