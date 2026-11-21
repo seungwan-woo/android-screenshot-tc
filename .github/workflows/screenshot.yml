@@ -10,9 +10,9 @@ on:
         type: string
         default: ci/android/configs/sample.json
       mode:
-        description: 'verify compares; record uploads a candidate without changing the reference'
+        description: 'verify compares, record captures a candidate, deploy republishes the existing archive'
         type: choice
-        options: [verify, record]
+        options: [verify, record, deploy]
         default: verify
       publish_pages:
         description: 'Archive the screenshots and report on GitHub Pages (main only)'
@@ -22,6 +22,7 @@ permissions:
   contents: read
 jobs:
   screenshot:
+    if: ${{ inputs.mode != 'deploy' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
@@ -92,7 +93,7 @@ jobs:
 
   archive:
     needs: screenshot
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish_pages }}
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish_pages && inputs.mode != 'deploy' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -108,10 +109,12 @@ jobs:
 
   deploy:
     needs: archive
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish_pages && (needs.archive.result == 'success' || inputs.mode == 'deploy') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
+      actions: read
       pages: write
       id-token: write
     concurrency:
@@ -120,14 +123,40 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: gh-pages
           persist-credentials: false
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5.0.0
+        id: pages_upload
         with:
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
           path: .
+      - name: Wait for the uploaded Pages artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_ARTIFACT_ID: ${{ steps.pages_upload.outputs.artifact_id }}
+        run: |
+          if [[ ! "$PAGES_ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+            echo '::error::Pages upload did not return an artifact ID'
+            exit 1
+          fi
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=$PAGES_ARTIFACT_NAME"
+          for attempt in 1 2 3 4 5 6; do
+            if ids=$(timeout 7s gh api "$endpoint" --jq '.artifacts[] | select(.expired == false) | .id') &&
+               [[ "$ids" == "$PAGES_ARTIFACT_ID" ]]; then
+              printf 'Pages artifact %s is visible as %s.\n' "$PAGES_ARTIFACT_ID" "$PAGES_ARTIFACT_NAME"
+              exit 0
+            fi
+            if [[ "$attempt" != 6 ]]; then sleep 3; fi
+          done
+          echo '::error::The uploaded Pages artifact did not become visible as a unique artifact for this run attempt'
+          exit 1
       - name: Deploy the report archive
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5.0.1
         id: deployment
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
