@@ -49,7 +49,7 @@ python3 .agents/skills/figma-compose-ux/scripts/ux.py demo --output-dir /tmp/com
 python3 -m unittest discover -s .agents/skills/figma-compose-ux/tests -v
 ```
 
-데모는 네트워크·에뮬레이터 없이 계약/이미지 파이프라인을 검증합니다. 모든 입력은 **합성 fixture**이며 앱 UX의 실제 승인 결과가 아닙니다. 기본 샘플 앱은 Android View이므로 이 패키지가 실제 Compose 빌드·Figma 연동까지 검증되었다고 보지 않습니다.
+데모는 네트워크·에뮬레이터 없이 계약/이미지 파이프라인을 검증합니다. 모든 입력은 **합성 fixture**이며 앱 UX의 실제 승인 결과가 아닙니다. 저장소의 별도 에뮬레이터 CI는 Compose 샘플의 라이트·다크 화면과 버튼 동작을 검증합니다. 실제 Figma 파일과의 일치 여부는 해당 디자인 증거를 준비한 실행에서 평가합니다.
 
 | 기능 | 모듈 | 입력 → 출력 |
 |---|---|---|

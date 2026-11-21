@@ -120,7 +120,7 @@ private fun ScreenshotLab(dark: Boolean) {
                     HorizontalDivider(color = colors.outlineVariant)
                     Text(if (dark) "Theme: Dark" else "Theme: Light", color = colors.onSurfaceVariant)
                     Button(
-                        onClick = { updated = !updated },
+                        onClick = { updated = true },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("update_state"),
                         shape = RoundedCornerShape(28.dp),
                     ) { Text("Update state", style = MaterialTheme.typography.titleMedium) }
