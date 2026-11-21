@@ -106,3 +106,5 @@ Compose 앱을 같은 저장소에서 실행할 때는 앱의 실제 경로와 �
 모든 실행은 Actions 아티팩트에 `report/index.html`과 JSON, 비교 이미지 및 캡처 진단을 남깁니다. 캡처 전후 전면 앱을 확인하므로 런처 응답 없음이 끼어들면 환경 오류로 기록됩니다. CI는 Quickstep 응답 없음이 확인된 경우 전용 에뮬레이터에서 런처를 한 차례 재시작합니다.
 
 GitHub Pages는 저장소 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 한 번 설정한 뒤 사용합니다. `main`의 수동 실행에서 `publish_pages: true`를 선택하면 `gh-pages` 브랜치에 `runs/<run-id>-<attempt>/`가 추가되고, 인덱스가 갱신됩니다. 실패한 비교도 보관되며, 동일 실행을 다시 시도하면 별도 항목이 됩니다. Pages에 공개할 수 있는 이미지와 진단만 있는 실행에서 켜세요. 이전 보고서와 인덱스는 브랜치에 보관되므로 Actions 아티팩트 만료와 관계없이 조회할 수 있습니다.
+
+`archive`까지 성공하고 Pages 배포에 실패한 경우 `main`에서 **`mode: deploy`**와 **`publish_pages: true`**로 새 수동 실행을 시작합니다. `gh-pages`의 기존 이력을 읽어 배포하므로 에뮬레이터를 실행하거나 새 리포트를 만들 필요가 없습니다.
