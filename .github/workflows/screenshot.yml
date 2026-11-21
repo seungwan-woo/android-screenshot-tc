@@ -29,7 +29,7 @@ jobs:
       matrix:
         theme: ${{ github.event_name == 'workflow_dispatch' && fromJSON('["selected"]') || fromJSON('["light","dark"]') }}
     env:
-      SCREENSHOT_MODE: ${{ inputs.mode || 'record' }}
+      SCREENSHOT_MODE: ${{ inputs.mode || 'verify' }}
       SCREENSHOT_CONFIG: ${{ inputs.config || (matrix.theme == 'dark' && 'ci/android/configs/sample-dark.json' || 'ci/android/configs/sample.json') }}
       SCREENSHOT_OUT: ${{ github.workspace }}/artifacts/screenshot
       SCREENSHOT_VALIDATION_OUT: ${{ github.workspace }}/artifacts/smoke
