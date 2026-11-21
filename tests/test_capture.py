@@ -26,6 +26,10 @@ if args[-2:]==['getprop','sys.boot_completed']:
     print(os.environ.get('FAKE_BOOT','1'))
 elif args[-3:]==['exec-out','screencap','-p']:
     sys.stdout.buffer.write(pathlib.Path(os.environ['FAKE_PNG']).read_bytes())
+elif args[-4:]==['shell','dumpsys','window','displays']:
+    history=pathlib.Path(os.environ['FAKE_ADB_LOG']).read_text()
+    changed=os.environ.get('FAKE_FOCUS_AFTER_CAPTURE') if 'screencap' in history else None
+    print(changed or os.environ.get('FAKE_FOCUS','mCurrentFocus=Window{abc u0 example/example.Main}'))
 elif args[-3:]==['shell','wm','size']:
     print('Physical size: '+os.environ.get('FAKE_SIZE','1080x1920'))
 elif args[-3:]==['shell','wm','density']:
@@ -79,6 +83,23 @@ elif args[-3:]==['shell','wm','density']:
         self.assertEqual(p.returncode, 0, p.stderr)
         self.assertIn(['-s', 'test-device', 'shell', 'wm', 'size', '1080x1920'], self.commands())
         self.assertIn(['-s', 'test-device', 'shell', 'wm', 'density', '420'], self.commands())
+
+    def test_launcher_anr_cannot_be_used_as_the_app_screenshot(self):
+        self.env['FAKE_FOCUS'] = '  mCurrentFocus=Window{abc u0 Application Not Responding: com.android.launcher3}'
+        diagnostic = self.root / 'capture-diagnostic.json'
+        p = self.capture('--component', 'example/.Main', '--focus-timeout', '0',
+                         '--diagnostic', str(diagnostic), no_launch=False)
+        self.assertEqual(p.returncode, 2, p.stderr)
+        self.assertFalse((self.root / 'captured.png').exists())
+        self.assertFalse(any('screencap' in call for call in self.commands()))
+        self.assertIn('Application Not Responding', json.loads(diagnostic.read_text())['focus'])
+
+    def test_overlay_that_appears_during_screencap_discards_buffer(self):
+        self.env['FAKE_FOCUS_AFTER_CAPTURE'] = 'mCurrentFocus=Window{abc u0 Application Not Responding: com.android.launcher3}'
+        p = self.capture('--expected-package', 'example', '--focus-timeout', '0')
+        self.assertEqual(p.returncode, 2, p.stderr)
+        self.assertTrue(any('screencap' in call for call in self.commands()))
+        self.assertFalse((self.root / 'captured.png').exists())
 
 if __name__ == '__main__':
     unittest.main()

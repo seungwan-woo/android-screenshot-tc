@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "name": "Screenshot CI sample",
+  "component": "com.example.screenshotci/.MainActivity",
+  "reference": "ci/android/reference/sample.png",
+  "size": "1080x1920",
+  "density": 420,
+  "settle_seconds": 3,
+  "focus_timeout": 25,
+  "channel_tolerance": 0,
+  "max_diff_ratio": 0,
+  "smoke": true
+}

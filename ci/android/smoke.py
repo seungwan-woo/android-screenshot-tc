@@ -32,7 +32,7 @@ print(run('bash', str(ROOT / 'sample/build.sh')).stdout, flush=True)
 adb('shell', 'am', 'force-stop', 'com.example.screenshotci')
 print(run(PYTHON, str(ROOT / 'capture.py'), '--serial', SERIAL, '--apk', str(ROOT / 'sample/build/sample.apk'),
           '--component', COMPONENT, '--output', str(OUT / 'reference.png'), '--settle-seconds', '5').stdout, flush=True)
-print(run(PYTHON, str(ROOT / 'capture.py'), '--serial', SERIAL, '--no-launch',
+print(run(PYTHON, str(ROOT / 'capture.py'), '--serial', SERIAL, '--no-launch', '--expected-package', 'com.example.screenshotci',
           '--output', str(OUT / 'actual.png')).stdout, flush=True)
 print(run(PYTHON, str(ROOT / 'compare.py'), str(OUT / 'reference.png'), str(OUT / 'actual.png'),
           '--artifacts', str(OUT / 'same-screen')).stdout, flush=True)
@@ -51,7 +51,7 @@ changed_hierarchy = adb('shell', 'cat', '/sdcard/screenshot-ci-window.xml')
 (OUT / 'updated-window.xml').write_text(changed_hierarchy)
 if not any(n.attrib.get('text') == 'State: UPDATED' for n in ET.fromstring(changed_hierarchy).iter('node')):
     raise RuntimeError('Button did not update app state')
-print(run(PYTHON, str(ROOT / 'capture.py'), '--serial', SERIAL, '--no-launch',
+print(run(PYTHON, str(ROOT / 'capture.py'), '--serial', SERIAL, '--no-launch', '--expected-package', 'com.example.screenshotci',
           '--output', str(OUT / 'changed.png')).stdout, flush=True)
 negative = subprocess.run([PYTHON, str(ROOT / 'compare.py'), str(OUT / 'reference.png'),
                           str(OUT / 'changed.png'), '--artifacts', str(OUT / 'changed-screen')],
