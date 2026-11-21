@@ -1,7 +1,6 @@
-# Sample reference
+# Screenshot Lab baselines
 
-`sample.png` was captured from the real GitHub Actions emulator in [run 43232359836](https://github.com/seungwan-woo/android-screenshot-tc/actions/runs/43232359836), commit `776ce4e03244f7441c0d3f182ce344c4ada2a486`, and inspected before being added.
+- `sample.png` captures the Compose sample in light theme.
+- `sample-dark.png` captures the Compose sample in dark theme.
 
-Environment: API 35 default x86_64 image revision 2, emulator 37.2.13 (build 16740729), SwiftShader, 1080×1920, 420 dpi. The expected screen includes `Screenshot CI`, `State: READY` and the `Update state` button. The demo clock is 10:00.
-
-This is a baseline for the sample APK only. Verify runs never overwrite it. Review candidate images before replacing it; dependency/rendering changes require a separate baseline review.
+They are full 1080×1920 display captures from the GitHub Actions API 35 default x86_64 revision 2 emulator, at 420 dpi, with SwiftShader and the status bar in demo mode. Each theme is recorded with its own JSON configuration. Review together with the corresponding smoke artifacts before updating a baseline. The One UI Design Kit informed the sample's rounded shapes, spacing and colors. These images capture the Android sample directly.

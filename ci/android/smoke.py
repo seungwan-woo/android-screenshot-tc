@@ -16,6 +16,7 @@ OUT.mkdir(parents=True)
 PYTHON = sys.executable
 COMPONENT = 'com.example.screenshotci/.MainActivity'
 SERIAL = os.environ.get('ANDROID_SERIAL', 'emulator-5554')
+THEME = os.environ.get('SCREENSHOT_THEME', 'system')
 
 def run(*command):
     result = subprocess.run(command, text=True, capture_output=True, timeout=300)
@@ -28,9 +29,12 @@ def run(*command):
 def adb(*command):
     return run('adb', '-s', SERIAL, *command).stdout
 
-print(run('bash', str(ROOT / 'sample/build.sh')).stdout, flush=True)
+APK = os.environ.get('SCREENSHOT_SMOKE_APK')
+if not APK:
+    print(run('bash', str(ROOT / 'sample/build.sh')).stdout, flush=True)
+    APK = str(ROOT / 'sample/build/sample.apk')
 adb('shell', 'am', 'force-stop', 'com.example.screenshotci')
-print(run(PYTHON, str(ROOT / 'capture.py'), '--serial', SERIAL, '--apk', str(ROOT / 'sample/build/sample.apk'),
+print(run(PYTHON, str(ROOT / 'capture.py'), '--serial', SERIAL, '--apk', APK, '--theme', THEME,
           '--component', COMPONENT, '--output', str(OUT / 'reference.png'), '--settle-seconds', '5').stdout, flush=True)
 print(run(PYTHON, str(ROOT / 'capture.py'), '--serial', SERIAL, '--no-launch', '--expected-package', 'com.example.screenshotci',
           '--output', str(OUT / 'actual.png')).stdout, flush=True)
@@ -42,7 +46,10 @@ hierarchy = adb('shell', 'cat', '/sdcard/screenshot-ci-window.xml')
 tree = ET.fromstring(hierarchy)
 if not any(n.attrib.get('text') == 'State: READY' for n in tree.iter('node')):
     raise RuntimeError('Expected sample screen not visible')
-button = next(n for n in tree.iter('node') if n.attrib.get('content-desc') == 'update_state')
+observed_themes = [n.attrib['text'] for n in tree.iter('node') if n.attrib.get('text', '').startswith('Theme: ')]
+if len(observed_themes) != 1 or (THEME != 'system' and observed_themes != [f'Theme: {THEME.title()}']):
+    raise RuntimeError(f'Unexpected theme label for {THEME}: {observed_themes}')
+button = next(n for n in tree.iter('node') if n.attrib.get('resource-id') == 'update_state')
 x1, y1, x2, y2 = map(int, re.findall(r'\d+', button.attrib['bounds']))
 adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
 time.sleep(2)
@@ -61,7 +68,7 @@ if negative.returncode != 1:
 report = {'passed': True, 'checks': {'apk_built_and_signature_verified': True,
           'apk_installed_and_ready_state_visible': True, 'identical_screen_compare_exit': 0,
           'button_updated_visible_state': True, 'changed_screen_compare_exit': 1},
-          'artifact_directory': str(OUT), 'sample_component': COMPONENT,
+          'artifact_directory': str(OUT), 'sample_component': COMPONENT, 'theme': observed_themes[0],
           'android_api': adb('shell', 'getprop', 'ro.build.version.sdk').strip(),
           'system_fingerprint': adb('shell', 'getprop', 'ro.build.fingerprint').strip()}
 (OUT / 'validation.json').write_text(json.dumps(report, indent=2) + '\n')
