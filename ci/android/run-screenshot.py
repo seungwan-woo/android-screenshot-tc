@@ -110,6 +110,12 @@ def main():
         state['name'] = config['name']
         state['config'] = args.config
         reference = args.reference_override or repo_path(config['reference'], '.png')
+        for filename in ('actual.png', 'cropped.png', 'comparison/reference.png', 'comparison/actual.png', 'comparison/diff.png'):
+            destination = output / filename
+            if destination.resolve() == reference.resolve() or (
+                destination.exists() and reference.exists() and destination.samefile(reference)
+            ):
+                raise ValueError('Reference PNG must be separate from generated screenshots')
         if args.mode == 'verify' and not reference.is_file():
             raise ValueError(f'Reference PNG is missing: {reference}')
         if args.validate_only:

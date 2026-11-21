@@ -55,3 +55,16 @@ elif args[-3:] == ['exec-out', 'screencap', '-p']:
             self.assertEqual(json.loads((output / 'comparison/result.json').read_text())['changed_pixels'], 0)
             with Image.open(output / 'actual.png') as original:
                 self.assertEqual(original.size, (12, 18))
+
+    def test_reference_cannot_be_replaced_by_generated_capture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            reference = output / 'actual.png'
+            Image.new('RGB', (1, 1), 'blue').save(reference)
+            original = reference.read_bytes()
+            result = subprocess.run([sys.executable, str(RUN), '--output', str(output),
+                                     '--reference-override', str(reference), '--validate-only'],
+                                    capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('must be separate', result.stderr)
+            self.assertEqual(reference.read_bytes(), original)
