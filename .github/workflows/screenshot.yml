@@ -2,13 +2,22 @@ name: Emulator screenshot test
 on:
   pull_request:
   push:
+    branches-ignore: [gh-pages]
   workflow_dispatch:
     inputs:
+      config:
+        description: 'Repository-relative JSON configuration'
+        type: string
+        default: ci/android/configs/sample.json
       mode:
         description: 'verify compares; record uploads a candidate without changing the reference'
         type: choice
         options: [verify, record]
         default: verify
+      publish_pages:
+        description: 'Archive the screenshots and report on GitHub Pages (main only)'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -17,9 +26,9 @@ jobs:
     timeout-minutes: 25
     env:
       SCREENSHOT_MODE: ${{ inputs.mode || 'verify' }}
+      SCREENSHOT_CONFIG: ${{ inputs.config || 'ci/android/configs/sample.json' }}
       SCREENSHOT_OUT: ${{ github.workspace }}/artifacts/screenshot
       SCREENSHOT_VALIDATION_OUT: ${{ github.workspace }}/artifacts/smoke
-      REFERENCE_PNG: ${{ github.workspace }}/ci/android/reference/sample.png
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -38,6 +47,8 @@ jobs:
           python3 -m pip install -r requirements.txt
       - name: Test comparison and image revision guard
         run: python3 -m unittest discover -s tests -v
+      - name: Validate screenshot configuration
+        run: python3 ci/android/run-screenshot.py --config "$SCREENSHOT_CONFIG" --mode "$SCREENSHOT_MODE" --output "$RUNNER_TEMP/screenshot-config" --validate-only
       - name: Enable KVM on the GitHub-hosted runner
         run: |
           test -e /dev/kvm
@@ -45,6 +56,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Run screenshot test on an emulator
+        id: emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -59,12 +71,58 @@ jobs:
           pre-emulator-launch-script: python3 ci/android/check-system-image.py
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -memory 3072 -cores 2 -camera-back none -camera-front none -feature -Vulkan
           script: |
-            bash ci/android/ci-check.sh
-            python3 ci/android/smoke.py
+            python3 ci/android/run-screenshot.py --config "$SCREENSHOT_CONFIG" --mode "$SCREENSHOT_MODE" --output "$SCREENSHOT_OUT" --smoke-output "$SCREENSHOT_VALIDATION_OUT" --recover-launcher-anr
+      - name: Render report even when comparison fails
+        if: ${{ !cancelled() }}
+        env:
+          SCREENSHOT_OUTCOME: ${{ steps.emulator.outcome || 'skipped' }}
+        run: python3 ci/android/report.py render --artifacts artifacts --output artifacts/report --outcome "$SCREENSHOT_OUTCOME"
       - name: Upload screenshots even when comparison fails
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: emulator-screenshots-${{ github.run_id }}
+          name: emulator-screenshots-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/
           if-no-files-found: warn
+
+  archive:
+    needs: screenshot
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish_pages }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: emulator-screenshots-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/screenshot-artifact
+      - name: Append report to gh-pages
+        run: bash ci/android/archive-report.sh "$RUNNER_TEMP/screenshot-artifact/report"
+
+  deploy:
+    needs: archive
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: screenshot-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          persist-credentials: false
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy the report archive
+        uses: actions/deploy-pages@v4
+        id: deployment

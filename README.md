@@ -64,3 +64,42 @@ python3 -m unittest discover -s .agents/skills/figma-compose-ux/tests -v
 ```
 
 이 데모와 별도 `Compose UX skill` CI는 합성 데이터로 도구 동작을 검증합니다. 기존 실제 에뮬레이터 screenshot CI와 구분됩니다. 실제 Figma·Compose 프로젝트에 적용할 때는 해당 MCP 연결, 앱 빌드 및 상태별 런타임 관측이 필요합니다.
+
+## 설정 파일로 Actions 실행하고 결과 보관하기
+
+GitHub의 **Actions → Emulator screenshot test → Run workflow**에서 저장소 기준 `config` 경로와 `mode`를 지정합니다. [기본 설정](ci/android/configs/sample.json)은 기존 샘플 앱을 빌드하고 화면 전체를 비교합니다.
+
+```bash
+gh workflow run screenshot.yml --ref main \
+  -f config=ci/android/configs/sample.json -f mode=verify -f publish_pages=false
+```
+
+Compose 앱을 같은 저장소에서 실행할 때는 앱의 실제 경로와 컴포넌트, 기준 PNG를 가진 설정 파일을 추가합니다. 다음은 특정 패널을 비교하는 예시입니다.
+
+```json
+{
+  "schema_version": 1,
+  "name": "Compose button panel",
+  "gradle": {"directory": "examples/compose-app", "task": ":app:assembleDebug"},
+  "apk": "examples/compose-app/app/build/outputs/apk/debug/app-debug.apk",
+  "component": "com.example.app/.MainActivity",
+  "reference": "screenshots/buttons.png",
+  "size": "480x800",
+  "density": 160,
+  "crop": [47, 108, 433, 384],
+  "settle_seconds": 3,
+  "focus_timeout": 25,
+  "channel_tolerance": 0,
+  "max_diff_ratio": 0,
+  "smoke": false
+}
+```
+
+- `gradle`을 지정하면 해당 디렉터리의 Wrapper로 APK를 빌드합니다. 이미 준비된 APK를 사용할 때는 `gradle`을 생략합니다. 둘 다 생략하면 기본 샘플을 빌드합니다.
+- `crop`은 실제 디스플레이 좌표의 `[left, top, right, bottom]`이며 선택 사항입니다. 예시의 기준 PNG는 `386×276`이어야 하며 이미지 크기를 강제로 맞추지 않습니다. 앱과 기준 이미지에 맞는 값을 사용하세요.
+- `verify`는 기준 PNG와 비교합니다. `record`는 후보 이미지를 남깁니다. 프로젝트에서 필요한 SDK·빌드 의존성은 앱 빌드 단계에 맞춰 준비하세요.
+- `smoke: true`는 내장 View 샘플의 기본 화면 설정에만 사용합니다. 실제 앱의 상태 전이는 앱에 맞는 계측 테스트에서 실행하세요.
+
+모든 실행은 Actions 아티팩트에 `report/index.html`과 JSON, 비교 이미지 및 캡처 진단을 남깁니다. 캡처 전후 전면 앱을 확인하므로 런처 응답 없음이 끼어들면 환경 오류로 기록됩니다. CI는 Quickstep 응답 없음이 확인된 경우 전용 에뮬레이터에서 런처를 한 차례 재시작합니다.
+
+GitHub Pages는 저장소 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 한 번 설정한 뒤 사용합니다. `main`의 수동 실행에서 `publish_pages: true`를 선택하면 `gh-pages` 브랜치에 `runs/<run-id>-<attempt>/`가 추가되고, 인덱스가 갱신됩니다. 실패한 비교도 보관되며, 동일 실행을 다시 시도하면 별도 항목이 됩니다. Pages에 공개할 수 있는 이미지와 진단만 있는 실행에서 켜세요. 이전 보고서와 인덱스는 브랜치에 보관되므로 Actions 아티팩트 만료와 관계없이 조회할 수 있습니다.
