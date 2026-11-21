@@ -24,9 +24,13 @@ jobs:
   screenshot:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        theme: ${{ github.event_name == 'workflow_dispatch' && fromJSON('["selected"]') || fromJSON('["light","dark"]') }}
     env:
-      SCREENSHOT_MODE: ${{ inputs.mode || 'verify' }}
-      SCREENSHOT_CONFIG: ${{ inputs.config || 'ci/android/configs/sample.json' }}
+      SCREENSHOT_MODE: ${{ inputs.mode || 'record' }}
+      SCREENSHOT_CONFIG: ${{ inputs.config || (matrix.theme == 'dark' && 'ci/android/configs/sample-dark.json' || 'ci/android/configs/sample.json') }}
       SCREENSHOT_OUT: ${{ github.workspace }}/artifacts/screenshot
       SCREENSHOT_VALIDATION_OUT: ${{ github.workspace }}/artifacts/smoke
     steps:
@@ -35,6 +39,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -43,7 +48,7 @@ jobs:
           packages: platform-tools
       - name: Install build and comparison tools
         run: |
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          sdkmanager 'platforms;android-35' 'platforms;android-37.1' 'build-tools;37.0.0'
           python3 -m pip install -r requirements.txt
       - name: Test comparison and image revision guard
         run: python3 -m unittest discover -s tests -v
@@ -81,7 +86,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: emulator-screenshots-${{ github.run_id }}-${{ github.run_attempt }}
+          name: emulator-screenshots-${{ github.run_id }}-${{ github.run_attempt }}${{ matrix.theme == 'dark' && '-dark' || '' }}
           path: artifacts/
           if-no-files-found: warn
 

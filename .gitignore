@@ -3,5 +3,9 @@ __pycache__/
 .venv/
 artifacts/
 ci/android/sample/build/
+ci/android/sample/app/build/
+ci/android/sample/.gradle/
+ci/android/sample/.kotlin/
+ci/android/sample/local.properties
 ci/android/artifacts/
 .superpowers/

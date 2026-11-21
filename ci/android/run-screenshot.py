@@ -18,7 +18,7 @@ DEFAULTS = {
     'schema_version': 1, 'name': 'Screenshot CI sample', 'component': DEFAULT_COMPONENT,
     'reference': 'ci/android/reference/sample.png', 'apk': None, 'gradle': None,
     'size': '1080x1920', 'density': 420, 'settle_seconds': 3, 'focus_timeout': 25, 'crop': None,
-    'channel_tolerance': 0, 'max_diff_ratio': 0, 'smoke': False,
+    'channel_tolerance': 0, 'max_diff_ratio': 0, 'theme': 'system', 'smoke': False,
 }
 
 
@@ -64,6 +64,8 @@ def load_config(path):
             raise ValueError(f'{key} must be in [0,{maximum}]')
     if type(config['smoke']) is not bool:
         raise ValueError('smoke must be a boolean')
+    if config['theme'] not in ('system', 'light', 'dark'):
+        raise ValueError('theme must be system, light or dark')
     if config['smoke'] and (config['apk'] or config['gradle'] or config['component'] != DEFAULT_COMPONENT
                             or config['size'] != '1080x1920' or config['density'] != 420):
         raise ValueError('smoke requires the built-in sample and its display geometry')
@@ -121,7 +123,7 @@ def main():
         if args.validate_only:
             state['status'] = 'validated'
             return 0
-        state['capture'] = {key: config[key] for key in ('component', 'size', 'density', 'crop')}
+        state['capture'] = {key: config[key] for key in ('component', 'size', 'density', 'crop', 'theme')}
         state['stage'] = 'build'
         if config['gradle']:
             project = repo_path(config['gradle']['directory'])
@@ -140,7 +142,7 @@ def main():
         diagnostic = output / 'capture-diagnostic.json'
         capture = [sys.executable, ANDROID / 'capture.py', '--apk', apk, '--component', config['component'],
                    '--output', output / 'actual.png', '--diagnostic', diagnostic]
-        for name in ('size', 'density', 'settle_seconds', 'focus_timeout'):
+        for name in ('size', 'density', 'theme', 'settle_seconds', 'focus_timeout'):
             capture.extend(['--' + name.replace('_', '-'), config[name]])
         code = run(capture)
         if code == 2 and args.recover_launcher_anr and diagnostic.is_file():
@@ -172,7 +174,8 @@ def main():
         if config['smoke'] and args.smoke_output:
             state['stage'] = 'smoke'
             state['smoke_exit'] = run([sys.executable, ANDROID / 'smoke.py'],
-                                      env={**os.environ, 'SCREENSHOT_VALIDATION_OUT': str(args.smoke_output.resolve())})
+                                      env={**os.environ, 'SCREENSHOT_VALIDATION_OUT': str(args.smoke_output.resolve()),
+                                           'SCREENSHOT_SMOKE_APK': str(apk), 'SCREENSHOT_THEME': config['theme']})
             if state['smoke_exit'] != 0:
                 state['error'] = 'Sample smoke test failed'
                 return 1 if code == 1 else 2

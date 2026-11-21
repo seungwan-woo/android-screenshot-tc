@@ -22,14 +22,15 @@ p.add_argument('--output', type=Path, required=True)
 p.add_argument('--settle-seconds', type=float, default=3)
 p.add_argument('--size', default='1080x1920')
 p.add_argument('--density', type=int, default=420)
+p.add_argument('--theme', choices=('system', 'light', 'dark'), default='system')
 p.add_argument('--expected-package', help='Verify foreground ownership when capturing the current state')
 p.add_argument('--focus-timeout', type=float, default=25)
 p.add_argument('--diagnostic', type=Path, help='Write the observed focus when the screen is blocked')
 args = p.parse_args()
 if args.apk and not args.component:
     p.error('--apk requires --component to select the application screen')
-if args.no_launch and (args.apk or args.component):
-    p.error('--no-launch cannot install or launch an application')
+if args.no_launch and (args.apk or args.component or args.theme != 'system'):
+    p.error('--no-launch cannot install or launch an application or change its theme')
 if not re.fullmatch(r'[1-9]\d{0,3}x[1-9]\d{0,3}', args.size) or not 1 <= args.density <= 1000:
     p.error('size must be WIDTHxHEIGHT and density in [1,1000]')
 if any(not math.isfinite(value) or value < 0 for value in (args.focus_timeout, args.settle_seconds)):
@@ -58,6 +59,8 @@ if not args.no_launch:
     for name in ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']:
         adb('shell', 'settings', 'put', 'global', name, '0')
     adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
+    if args.theme != 'system':
+        adb('shell', 'cmd', 'uimode', 'night', 'yes' if args.theme == 'dark' else 'no')
     adb('shell', 'settings', 'put', 'system', 'accelerometer_rotation', '0')
     adb('shell', 'settings', 'put', 'system', 'user_rotation', '0')
     adb('shell', 'settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '0')

@@ -64,6 +64,19 @@ elif args[-3:]==['shell','wm','density']:
         self.assertFalse((self.root / 'captured.png').exists())
         self.assertEqual(len(self.commands()), 1)
 
+    def test_explicit_dark_theme_is_set_before_launch(self):
+        p = self.capture('--component', 'example/.Main', '--theme', 'dark', no_launch=False)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        commands = self.commands()
+        change = ['-s', 'test-device', 'shell', 'cmd', 'uimode', 'night', 'yes']
+        launch = ['-s', 'test-device', 'shell', 'am', 'start', '-W', '-n', 'example/.Main']
+        self.assertLess(commands.index(change), commands.index(launch))
+
+    def test_current_state_capture_cannot_change_theme(self):
+        p = self.capture('--theme', 'light')
+        self.assertEqual(p.returncode, 2, p.stderr)
+        self.assertEqual(self.commands(), [])
+
     def test_no_launch_rejects_application_install_before_device_mutation(self):
         apk = self.root / 'sample.apk'
         apk.write_bytes(b'test apk')
