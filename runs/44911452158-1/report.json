@@ -1,0 +1,23 @@
+{
+  "key": "44911452158-1",
+  "name": "Screenshot Lab (light)",
+  "status": "recorded",
+  "outcome": "success",
+  "mode": "record",
+  "stage": "completed",
+  "error": "",
+  "smoke_exit": 0,
+  "capture_diagnostic": null,
+  "capture": {
+    "component": "com.example.screenshotci/.MainActivity",
+    "size": "1080x1920",
+    "density": 420,
+    "crop": null,
+    "theme": "light"
+  },
+  "ref": "main",
+  "sha": "26d83cca78bb20985b22bb984fffd3947ffa314c",
+  "recorded_at": "2026-11-21 14:01:02Z",
+  "actions_url": "https://github.com/seungwan-woo/android-screenshot-tc/actions/runs/44911452158/attempts/1",
+  "comparison": {}
+}
